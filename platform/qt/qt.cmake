@@ -1,9 +1,21 @@
 # Note: Using Sqlite instead of QSqlDatabase for better compatibility.
 
-find_package(Qt5Gui REQUIRED)
-find_package(Qt5Network REQUIRED)
-find_package(Qt5OpenGL REQUIRED)
-find_package(Qt5Widgets REQUIRED)
+find_package(Qt6 REQUIRED COMPONENTS
+    Core
+    Gui
+    Widgets
+    OpenGL
+    OpenGLWidgets
+    Network
+    Quick
+    QuickControls2
+)
+
+qt_standard_project_setup()
+
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_definitions("-DQT_COMPILING_QIMAGE_COMPAT_CPP")
@@ -88,10 +100,11 @@ target_link_libraries(
     PRIVATE
         $<$<NOT:$<PLATFORM_ID:Windows>>:z>
         $<$<NOT:$<PLATFORM_ID:Windows>>:mbgl-vendor-icu>
-        Qt5::Core
-        Qt5::Gui
-        Qt5::Network
-        Qt5::OpenGL
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Network
+        Qt6::OpenGL
+        Qt6::OpenGLWidgets
         mbgl-vendor-nunicode
         mbgl-vendor-sqlite
 )
@@ -135,10 +148,13 @@ target_compile_definitions(
 target_link_libraries(
     qmapboxgl
     PRIVATE
-        Qt5::Core
-        Qt5::Gui
-        mbgl-compiler-options
-        mbgl-core
+    Qt6::Core
+    Qt6::Gui
+    Qt6::OpenGL
+    Qt6::Widgets
+    Qt6::OpenGLWidgets
+    mbgl-compiler-options
+    mbgl-core
 )
 
 add_executable(
@@ -150,15 +166,58 @@ add_executable(
 )
 
 # Qt public API should keep compatibility with old compilers for legacy systems
-set_property(TARGET mbgl-qt PROPERTY CXX_STANDARD 98)
+set_property(TARGET mbgl-qt PROPERTY CXX_STANDARD 17)
 
 target_link_libraries(
     mbgl-qt
     PRIVATE
-        Qt5::Widgets
-        Qt5::Gui
+        Qt6::Widgets
+        Qt6::Gui
+        Qt6::OpenGL
+        Qt6::Core
+        Qt6::Widgets
+        Qt6::OpenGLWidgets
         mbgl-compiler-options
         qmapboxgl
+)
+
+qt_add_executable(mbgl-quick
+    ${PROJECT_SOURCE_DIR}/platform/qt/quick/main.cpp
+    ${PROJECT_SOURCE_DIR}/platform/qt/quick/mapboxitem.cpp
+    ${PROJECT_SOURCE_DIR}/platform/qt/quick/mapboxitem.h
+)
+
+target_include_directories(mbgl-quick PRIVATE
+    ${PROJECT_SOURCE_DIR}/platform/qt/quick
+)
+
+qt_add_qml_module(mbgl-quick
+    URI mbglquick
+    VERSION 1.0
+    QML_FILES
+        platform/qt/quick/Main.qml
+        platform/qt/quick/MapBoxView.qml
+        platform/qt/quick/ImageButton.qml
+    RESOURCES
+        platform/qt/quick/images/dark.svg
+        platform/qt/quick/images/light.svg
+        platform/qt/quick/images/NAV_DAY.svg
+        platform/qt/quick/images/NAV_NIGHT.svg
+        platform/qt/quick/images/outdoor.svg
+        platform/qt/quick/images/satelightstreet.svg
+        platform/qt/quick/images/satelite.svg
+        platform/qt/quick/images/streets.svg
+        platform/qt/quick/images/zoomin.svg
+        platform/qt/quick/images/zoomout.svg
+    RESOURCE_PREFIX /
+)
+
+target_link_libraries(mbgl-quick PRIVATE
+    Qt6::Gui
+    Qt6::Quick
+    Qt6::QuickControls2
+    Qt6::Widgets
+    qmapboxgl
 )
 
 add_executable(
@@ -179,8 +238,12 @@ target_compile_definitions(
 target_link_libraries(
     mbgl-test-runner
     PRIVATE
-        Qt5::Gui
-        Qt5::OpenGL
+        Qt6::Widgets
+        Qt6::Gui
+        Qt6::OpenGL
+        Qt6::Core
+        Qt6::Widgets
+        Qt6::OpenGLWidgets
         mbgl-compiler-options
         pthread
 )

@@ -409,7 +409,11 @@ void MapWindow::keyPressEvent(QKeyEvent *ev)
 
 void MapWindow::mousePressEvent(QMouseEvent *ev)
 {
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
     m_lastPos = ev->localPos();
+#else
+    m_lastPos = ev->position();
+#endif
 
     if (ev->type() == QEvent::MouseButtonPress) {
         if (ev->buttons() == (Qt::LeftButton | Qt::RightButton)) {
@@ -430,24 +434,35 @@ void MapWindow::mousePressEvent(QMouseEvent *ev)
 
 void MapWindow::mouseMoveEvent(QMouseEvent *ev)
 {
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
     QPointF delta = ev->localPos() - m_lastPos;
-
+#else
+    QPointF delta = ev->position() - m_lastPos;
+#endif
     if (!delta.isNull()) {
         if (ev->buttons() == Qt::LeftButton && ev->modifiers() & Qt::ShiftModifier) {
             m_map->pitchBy(delta.y());
         } else if (ev->buttons() == Qt::LeftButton) {
             m_map->moveBy(delta);
         } else if (ev->buttons() == Qt::RightButton) {
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
             m_map->rotateBy(m_lastPos, ev->localPos());
+#else
+            m_map->rotateBy(m_lastPos, ev->position());
+#endif
         }
     }
-
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
     m_lastPos = ev->localPos();
+#else
+    m_lastPos = ev->position();
+#endif
     ev->accept();
 }
 
 void MapWindow::wheelEvent(QWheelEvent *ev)
 {
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
     if (ev->orientation() == Qt::Horizontal) {
         return;
     }
@@ -458,6 +473,18 @@ void MapWindow::wheelEvent(QWheelEvent *ev)
     }
 
     m_map->scaleBy(1 + factor, ev->pos());
+#else
+    if (ev->angleDelta().x() >0) {
+        return;
+    }
+
+    float factor = ev->angleDelta().y() / 1200.;
+    if (ev->angleDelta().y() < 0) {
+        factor = factor > -1 ? factor : 1 / factor;
+    }
+
+    m_map->scaleBy(1 + factor, ev->position());
+#endif
     ev->accept();
 }
 

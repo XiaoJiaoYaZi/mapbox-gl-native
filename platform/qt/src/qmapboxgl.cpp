@@ -107,10 +107,13 @@ std::unique_ptr<mbgl::style::Image> toStyleImage(const QString &id, const QImage
     const QImage swapped = sprite
         .rgbSwapped()
         .convertToFormat(QImage::Format_ARGB32_Premultiplied);
-
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
     auto img = std::make_unique<uint8_t[]>(swapped.byteCount());
     memcpy(img.get(), swapped.constBits(), swapped.byteCount());
-
+#else
+    auto img = std::make_unique<uint8_t[]>(swapped.sizeInBytes());
+    memcpy(img.get(), swapped.constBits(), swapped.sizeInBytes());
+#endif
     return std::make_unique<mbgl::style::Image>(
         id.toStdString(),
         mbgl::PremultipliedImage(
@@ -1349,7 +1352,12 @@ void QMapboxGL::addCustomLayer(const QString &id,
         public:
         QScopedPointer<QMapbox::CustomLayerHostInterface> ptr;
         HostWrapper(QScopedPointer<QMapbox::CustomLayerHostInterface>& p)
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
          : ptr(p.take()) {
+#else
+         : ptr(p.get()) {
+            p.reset();
+#endif
          }
 
         void initialize() {
@@ -1864,8 +1872,11 @@ bool QMapboxGLPrivate::setProperty(const PropertySetter& setter, const QString& 
     const std::string& propertyString = name.toStdString();
 
     mbgl::optional<conversion::Error> result;
-
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
     if (value.type() == QVariant::String) {
+#else
+    if (value.typeId() == QMetaType::QString) {
+#endif
         mbgl::JSDocument document;
         document.Parse<0>(value.toString().toStdString());
         if (!document.HasParseError()) {

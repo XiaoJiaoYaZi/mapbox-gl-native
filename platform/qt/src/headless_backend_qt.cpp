@@ -1,6 +1,11 @@
 #include <mbgl/gl/headless_backend.hpp>
+#include <QtGlobal>
 
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
 #include <QGLWidget>
+#else
+#include <QOpenGLWidget>
+#endif
 #include <QOpenGLContext>
 
 #include <cassert>
@@ -26,7 +31,11 @@ public:
     }
 
 private:
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
     QGLWidget widget;
+#else
+    QOpenGLWidget widget;
+#endif
 };
 
 void HeadlessBackend::createImpl() {

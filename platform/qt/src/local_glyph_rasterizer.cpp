@@ -51,8 +51,11 @@ Glyph LocalGlyphRasterizer::rasterizeGlyph(const FontStack&, GlyphID glyphID) {
         assert(false);
         return glyph;
     }
-
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
     glyph.metrics.width = impl->metrics->width(glyphID);
+#else
+    glyph.metrics.width = impl->metrics->boundingRect(glyphID).width();
+#endif
     glyph.metrics.height = impl->metrics->height();
     glyph.metrics.left = 3;
     glyph.metrics.top = -8;
@@ -68,9 +71,13 @@ Glyph LocalGlyphRasterizer::rasterizeGlyph(const FontStack&, GlyphID glyphID) {
     // Render at constant baseline, to align with glyphs that are rendered by node-fontnik.
     painter.drawText(QPointF(0, 20), QString(QChar(glyphID)));
 
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
     auto img = std::make_unique<uint8_t[]>(image.byteCount());
     memcpy(img.get(), image.constBits(), image.byteCount());
-
+#else
+    auto img = std::make_unique<uint8_t[]>(image.sizeInBytes());
+    memcpy(img.get(), image.constBits(), image.sizeInBytes());
+#endif
     glyph.bitmap = AlphaImage { size, std::move(img) };
 
     return glyph;
